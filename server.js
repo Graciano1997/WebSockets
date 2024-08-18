@@ -14,10 +14,15 @@ app.use(express.static('public'));
 io.on('connection', (socket) => {
   console.log('Novo cliente conectado');
 
-  socket.on('meuEvento', (dados) => {
-    console.log('Dados recebidos:', dados);
-    socket.emit('resposta', 'Dados recebidos com sucesso');
-  });
+  setInterval(() => {
+    socket.emit('sms', { timestamp: new Date(), message: 'Ola Seja Bem Vindo' });
+  }, 1000);
+
+  // socket.on('meuEvento', (dados) => {
+  //    console.log('Dados recebidos:', dados);
+  //   // socket.emit('resposta', 'Dados recebidos com sucesso');
+   
+  // });
 
   socket.on('disconnect', () => {
     console.log('Cliente desconectado');
