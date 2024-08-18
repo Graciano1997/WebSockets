@@ -3,48 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Microphone Streaming</title>
+    <title>Record Video and Audio</title>
 </head>
 <body>
-    <button id="start">Start</button>
-    <button id="stop">Stop</button>
+    <video id="video" autoplay playsinline></video>
+    <button id="start">Start Recording</button>
+    <button id="stop">Stop Recording</button>
 
     <script>
         let mediaStream = null;
         let mediaRecorder = null;
-        const ws = new WebSocket('ws://localhost:3000');
-
+        const chunks = [];
+        
         document.getElementById('start').addEventListener('click', async () => {
             try {
-                mediaStream = await navigator.mediaDevices.getUserMedia({video:true, audio: true });
-                mediaRecorder = new MediaRecorder(mediaStream);
+                mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                document.getElementById('video').srcObject = mediaStream;
 
+                mediaRecorder = new MediaRecorder(mediaStream);
                 mediaRecorder.ondataavailable = (event) => {
                     if (event.data.size > 0) {
-                        ws.send(event.data);
+                        chunks.push(event.data);
                     }
                 };
 
-                mediaRecorder.start(20000); // Envia dados a cada 100 ms
+                mediaRecorder.start();
             } catch (error) {
-                console.error('Error accessing microphone:', error);
+                console.error('Error accessing media devices:', error);
             }
         });
 
         document.getElementById('stop').addEventListener('click', () => {
-            if (mediaRecorder) {
-                mediaRecorder.stop();
-                mediaStream.getTracks().forEach(track => track.stop());
-            }
+            mediaRecorder.stop();
+            mediaStream.getTracks().forEach(track => track.stop());
+
+            const blob = new Blob(chunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const video = document.createElement('video');
+            video.src = url;
+            video.controls = true;
+            document.body.appendChild(video);
+            video.play();
         });
-
-        ws.onopen = () => {
-            console.log('WebSocket connection opened');
-        };
-
-        ws.onclose = () => {
-            console.log('WebSocket connection closed');
-        };
     </script>
 </body>
 </html>
