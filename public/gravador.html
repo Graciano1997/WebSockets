@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microphone Streaming</title>
+</head>
+<body>
+    <button id="start">Start</button>
+    <button id="stop">Stop</button>
+
+    <script>
+        let mediaStream = null;
+        let mediaRecorder = null;
+        const ws = new WebSocket('ws://localhost:3000');
+
+        document.getElementById('start').addEventListener('click', async () => {
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({video:true, audio: true });
+                mediaRecorder = new MediaRecorder(mediaStream);
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        ws.send(event.data);
+                    }
+                };
+
+                mediaRecorder.start(20000); // Envia dados a cada 100 ms
+            } catch (error) {
+                console.error('Error accessing microphone:', error);
+            }
+        });
+
+        document.getElementById('stop').addEventListener('click', () => {
+            if (mediaRecorder) {
+                mediaRecorder.stop();
+                mediaStream.getTracks().forEach(track => track.stop());
+            }
+        });
+
+        ws.onopen = () => {
+            console.log('WebSocket connection opened');
+        };
+
+        ws.onclose = () => {
+            console.log('WebSocket connection closed');
+        };
+    </script>
+</body>
+</html>
